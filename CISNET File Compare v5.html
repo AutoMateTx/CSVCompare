@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CSV Data Validator</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root {
+      --bg-primary: #0a0a0a;
+      --bg-card: #1a1a1a;
+      --bg-input: #2a2a2a;
+      --accent: #f44336; /* Red accent */
+      --success: #4caf50;
+      --warning: #ff9800;
+      --danger: #f44336;
+      --compare: #2196f3; /* Blue compare */
+      --compare-bg: #2a3a4d; /* Bluish grey compare block */
+      --compare-btn: #444; /* Dark grey compare button */
+      --compare-browse: #8b0000; /* Dark red browse button */
+      --text-primary: #ffffff; /* White text */
+      --text-secondary: #cccccc;
+      --border: #444;
+      --highlight-bullet: #ffeb3b;      /* Bright Yellow */
+      --highlight-hollowBullet: #ff9800; /* Bright Orange */
+      --highlight-blackSquare: #f44336;  /* Bright Red */
+      --highlight-tab: #4caf50;          /* Bright Green */
+      --highlight-newline: #2196f3;      /* Bright Blue */
+      --highlight-non-english: #9c27b0;  /* Bright Violet */
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary); /* White text globally */
+      padding: 15px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 90%; /* 90% width */
+      margin: 0 auto;
+    }
+    header {
+      text-align: left; /* Left-aligned header */
+      margin-bottom: 25px;
+      padding: 15px 0;
+    }
+    header h1 {
+      font-weight: 700;
+      font-size: 1.8rem;
+      color: var(--text-primary); /* White header text */
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    header p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+    .upload-section {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .upload-card {
+      background: var(--bg-card);
+      border-radius: 6px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+      padding: 15px;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .upload-area {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px; /* Space between button and file info */
+    }
+    .btn {
+      background: var(--accent); /* Red button */
+      color: #ffffff; /* White text */
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.2s;
+    }
+    .btn:hover {
+      background: #d32f2f; /* Darker red on hover */
+    }
+    .btn:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+    .btn.compare {
+      background: var(--compare); /* Blue compare button */
+    }
+    .btn.compare:hover {
+      background: #0d8bf2; /* Darker blue on hover */
+    }
+    .btn.compare-files {
+      background: var(--compare-btn); /* Dark grey compare button */
+    }
+    .btn.compare-files:hover {
+      background: #333; /* Darker grey on hover */
+    }
+    .btn.compare-browse {
+      background: var(--compare-browse); /* Dark red browse button */
+    }
+    .btn.compare-browse:hover {
+      background: #a52a2a; /* Darker red on hover */
+    }
+    .btn.export {
+      background: #607d8b; /* Teal export button */
+      margin-top: 10px;
+    }
+    .btn.export:hover {
+      background: #455a64; /* Darker teal on hover */
+    }
+    .file-info {
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      background: rgba(76, 175, 80, 0.5); /* Transparent Green */
+      padding: 4px 8px;
+      border-radius: 4px;
+      flex: 1; /* Take remaining space */
+    }
+    .analyze-section {
+      text-align: left; /* Left-aligned analyze button */
+      margin: 20px 0 25px;
+    }
+    .compare-section {
+      text-align: left;
+      margin: 20px 0 25px;
+      display: none;
+    }
+    .card {
+      background: var(--bg-card);
+      border-radius: 6px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+      padding: 18px;
+      margin-bottom: 18px;
+      border: 1px solid var(--border);
+    }
+    .compare-card {
+      background: var(--compare-bg); /* Bluish grey compare block */
+      border-radius: 6px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+      padding: 18px;
+      margin-bottom: 18px;
+      border: 1px solid var(--border);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .card-header h2 {
+      color: var(--text-primary); /* White header text */
+      font-size: 1.1rem;
+    }
+    .warning-banner {
+      background: rgba(255, 152, 0, 0.15);
+      border: 1px solid var(--warning);
+      color: var(--warning);
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 12px;
+      display: none;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .info-item {
+      background: var(--bg-input);
+      padding: 10px;
+      border-radius: 5px;
+      text-align: center;
+    }
+    .info-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 3px;
+    }
+    .info-value {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary); /* White value text */
+    }
+    .status-d-change {
+      background: var(--danger); /* Red for negative */
+      color: white;
+    }
+    .status-d-change.positive {
+      background: var(--success); /* Green for positive */
+    }
+    .status-d-change.zero {
+      background: #666; /* Grey for 0 */
+    }
+    .status-a-change {
+      background: var(--success); /* Green for negative */
+      color: white;
+    }
+    .status-a-change.positive {
+      background: var(--danger); /* Red for positive */
+    }
+    .status-a-change.zero {
+      background: #666; /* Grey for 0 */
+    }
+    .row-change {
+      background: var(--bg-input);
+      color: #ffeb3b; /* Yellow triangle */
+      font-weight: bold;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid #444;
+    }
+    th {
+      background: var(--bg-input);
+      color: #ffffff; /* White header text */
+      font-weight: 600;
+    }
+    tr:hover {
+      background: #222;
+    }
+    /* Highlight colors now match filter background colors */
+    .highlight-bullet { background-color: var(--highlight-bullet); color: #000; font-weight: bold; }
+    .highlight-hollowBullet { background-color: var(--highlight-hollowBullet); color: #fff; font-weight: bold; }
+    .highlight-blackSquare { background-color: var(--highlight-blackSquare); color: #fff; font-weight: bold; }
+    .highlight-tab { background-color: var(--highlight-tab); color: #fff; font-weight: bold; }
+    .highlight-newline { background-color: var(--highlight-newline); color: #fff; font-weight: bold; }
+    .highlight-non-english { background-color: var(--highlight-non-english); color: #fff; font-weight: bold; }
+    .name-diff {
+      background-color: rgba(255, 7, 7, 0.5); /* Red highlight */
+      text-decoration: underline;
+    }
+    .controls {
+      margin: 12px 0;
+    }
+    .filter-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .filter-group label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      /* Background colors now match highlight colors */
+      background: var(--highlight-bullet);
+      color: #000;
+      padding: 3px 8px;
+      border-radius: 14px;
+      font-size: 0.8rem;
+    }
+    .filter-group label[for="bullet"] { background: var(--highlight-bullet); color: #000; }
+    .filter-group label[for="hollowBullet"] { background: var(--highlight-hollowBullet); color: #fff; }
+    .filter-group label[for="blackSquare"] { background: var(--highlight-blackSquare); color: #fff; }
+    .filter-group label[for="tab"] { background: var(--highlight-tab); color: #fff; }
+    .filter-group label[for="newline"] { background: var(--highlight-newline); color: #fff; }
+    .search-box {
+      margin: 10px 0;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.85rem;
+      background: var(--bg-input);
+      color: var(--text-primary);
+    }
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    @media (max-width: 768px) {
+      .container {
+        max-width: 95%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><i class="fas fa-file-csv" style="color: #ffffff;"></i> CSV Data Validator</h1>
+      <p>Upload your CSV and FileSpec.ini for validation</p>
+    </header>
+
+    <div class="upload-section">
+      <div class="upload-card">
+        <div class="upload-area">
+          <input type="file" id="csvFileInput" accept=".csv" hidden />
+          <button class="btn" id="csvBrowseBtn"><i class="fas fa-folder-open"></i> Browse CSV</button>
+          <span class="file-info" id="csvFileInfo"></span>
+        </div>
+      </div>
+
+      <div class="upload-card">
+        <div class="upload-area">
+          <input type="file" id="iniFileInput" accept=".ini" hidden />
+          <button class="btn" id="iniBrowseBtn"><i class="fas fa-folder-open"></i> Browse INI</button>
+          <span class="file-info" id="iniFileInfo"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="analyze-section">
+      <button class="btn" id="analyzeBtn" disabled>
+        <i class="fas fa-play"></i> Analyze Data
+      </button>
+      <button class="btn compare" id="compareBtn" disabled style="margin-left: 10px;">
+        <i class="fas fa-exchange-alt"></i> Compare
+      </button>
+    </div>
+
+    <div class="compare-section" id="compareSection">
+      <div class="compare-card">
+        <div class="card-header">
+          <h2><i class="fas fa-file-csv" style="color: #ffffff;"></i> Compare Files</h2>
+        </div>
+        <div class="upload-card">
+          <div class="upload-area">
+            <input type="file" id="compareFileInput" accept=".csv" hidden />
+            <button class="btn compare-browse" id="compareBrowseBtn"><i class="fas fa-folder-open"></i> Browse Compare CSV</button>
+            <span class="file-info" id="compareFileInfo"></span>
+          </div>
+        </div>
+        <div style="margin-top: 10px;">
+          <button class="btn compare-files" id="compareFilesBtn" disabled>
+            <i class="fas fa-exchange-alt"></i> Compare Files
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="topWarningCard" style="display:none;">
+      <div class="warning-banner" id="topWarning">
+        <!-- Content populated by JS -->
+      </div>
+    </div>
+
+    <div class="card" id="fileInfoCard" style="display:none;">
+      <div class="card-header">
+        <h2><i class="fas fa-info-circle" style="color: #ffffff;"></i> File Summary</h2>
+      </div>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-label">Total Lines</div>
+          <div class="info-value" id="totalLines">-</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Columns (1st Row)</div>
+          <div class="info-value" id="firstRowCols">-</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Status: 'D' Count</div>
+          <div class="info-value" id="countD">-</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Status: 'A' Count</div>
+          <div class="info-value" id="countA">-</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="compareResultsCard" style="display:none;">
+      <div class="card-header">
+        <h2><i class="fas fa-exchange-alt" style="color: #ffffff;"></i> Comparison Results</h2>
+      </div>
+      <div id="compareResultsContainer"></div>
+    </div>
+
+    <div class="card" id="charsCard" style="display:none;">
+      <div class="card-header">
+        <h2><i class="fas fa-exclamation-triangle" style="color: #ffffff;"></i> Special Characters</h2>
+      </div>
+      <div class="controls">
+        <div class="filter-group" id="charFilterGroup"></div>
+      </div>
+      <div class="search-box">
+        <input type="text" id="charSearch" placeholder="Search..." />
+      </div>
+      <div id="charsTableContainer"></div>
+      <button class="btn export" onclick="exportTableToCSV('charsTableContainer', 'special_characters.csv')">
+        <i class="fas fa-download"></i> Export to CSV
+      </button>
+    </div>
+
+    <div class="card" id="nonEnglishCard" style="display:none;">
+      <div class="card-header">
+        <h2><i class="fas fa-language" style="color: #ffffff;"></i> Non-English Characters</h2>
+      </div>
+      <div class="search-box">
+        <input type="text" id="nonEnglishSearch" placeholder="Search..." />
+      </div>
+      <div id="nonEnglishTableContainer"></div>
+      <button class="btn export" onclick="exportTableToCSV('nonEnglishTableContainer', 'non_english_characters.csv')">
+        <i class="fas fa-download"></i> Export to CSV
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const CHAR_DEFS = [
+      { key: 'bullet', label: '• (Bullet)', regex: /•/g, className: 'highlight-bullet' },
+      { key: 'hollowBullet', label: '◦ (Hollow Bullet)', regex: /◦/g, className: 'highlight-hollowBullet' },
+      { key: 'blackSquare', label: '▪ (Black Square)', regex: /▪/g, className: 'highlight-blackSquare' },
+      { key: 'tab', label: 'TAB', regex: /\t/g, className: 'highlight-tab' },
+      { key: 'newline', label: 'Newline', regex: /[\r\n]/g, className: 'highlight-newline' }
+    ];
+
+    let csvContent = null;
+    let specContent = null;
+    let compareContent = null;
+
+    // Setup file inputs
+    document.getElementById('csvFileInput').onchange = (e) => {
+      if (e.target.files[0]) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = () => {
+          csvContent = reader.result;
+          // Display file info with size in KB or MB
+          let sizeStr;
+          if (file.size < 1024 * 1024) {
+            sizeStr = (file.size / 1024).toFixed(1) + ' KB';
+          } else {
+            sizeStr = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+          }
+          document.getElementById('csvFileInfo').textContent = `${file.name} - uploaded - ${sizeStr}`;
+          checkReady();
+        };
+        reader.readAsText(file, 'UTF-8');
+      }
+    };
+
+    document.getElementById('iniFileInput').onchange = (e) => {
+      if (e.target.files[0]) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = () => {
+          specContent = reader.result;
+          // Display file info with size in KB or MB
+          let sizeStr;
+          if (file.size < 1024 * 1024) {
+            sizeStr = (file.size / 1024).toFixed(1) + ' KB';
+          } else {
+            sizeStr = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+          }
+          document.getElementById('iniFileInfo').textContent = `${file.name} - uploaded - ${sizeStr}`;
+          checkReady();
+        };
+        reader.readAsText(file);
+      }
+    };
+
+    document.getElementById('compareFileInput').onchange = (e) => {
+      if (e.target.files[0]) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = () => {
+          compareContent = reader.result;
+          // Display file info with size in KB or MB
+          let sizeStr;
+          if (file.size < 1024 * 1024) {
+            sizeStr = (file.size / 1024).toFixed(1) + ' KB';
+          } else {
+            sizeStr = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+          }
+          document.getElementById('compareFileInfo').textContent = `${file.name} - uploaded - ${sizeStr}`;
+          document.getElementById('compareFilesBtn').disabled = false;
+        };
+        reader.readAsText(file, 'UTF-8');
+      }
+    };
+
+    // Setup browse buttons
+    document.getElementById('csvBrowseBtn').onclick = () => document.getElementById('csvFileInput').click();
+    document.getElementById('iniBrowseBtn').onclick = () => document.getElementById('iniFileInput').click();
+    document.getElementById('compareBrowseBtn').onclick = () => document.getElementById('compareFileInput').click();
+
+    function checkReady() {
+      const btn = document.getElementById('analyzeBtn');
+      btn.disabled = !(csvContent && specContent);
+      document.getElementById('compareBtn').disabled = !(csvContent && specContent);
+    }
+
+    document.getElementById('analyzeBtn').onclick = () => {
+      // Hide compare section, show analyze section
+      document.getElementById('compareSection').style.display = 'none';
+      document.getElementById('fileInfoCard').style.display = 'block';
+      document.getElementById('charsCard').style.display = 'block';
+      document.getElementById('nonEnglishCard').style.display = 'block';
+      document.getElementById('compareResultsCard').style.display = 'none';
+      analyze();
+    };
+
+    document.getElementById('compareBtn').onclick = () => {
+      // Hide analyze section, show compare section
+      document.getElementById('fileInfoCard').style.display = 'none';
+      document.getElementById('charsCard').style.display = 'none';
+      document.getElementById('nonEnglishCard').style.display = 'none';
+      document.getElementById('compareResultsCard').style.display = 'none';
+      document.getElementById('topWarningCard').style.display = 'none'; // Hide warning in compare mode
+      document.getElementById('compareSection').style.display = 'block';
+    };
+
+    document.getElementById('compareFilesBtn').onclick = compareFiles;
+
+    function analyze() {
+      // Parse FileSpec.ini
+      const specLines = specContent.trim().split(/\r\n|\r|\n/).slice(1);
+      const colMap = {};
+      let statusColIndex = -1;
+
+      specLines.forEach(line => {
+        if (!line.trim()) return;
+        const parts = line.split(',');
+        const colNum = parseInt(parts[0], 10);
+        if (!isNaN(colNum) && colNum > 0) {
+          const colName = parts.slice(1).join(',');
+          colMap[colNum] = colName;
+          if (colName.toLowerCase() === 'status') {
+            statusColIndex = colNum - 1; // zero-based
+          }
+        }
+      });
+
+      // Process CSV lines
+      const rawLines = csvContent.split(/\r\n|\r|\n/);
+      const lines = rawLines[rawLines.length - 1] === '' ? rawLines.slice(0, -1) : rawLines;
+      if (lines.length === 0) {
+        alert('CSV is empty!');
+        return;
+      }
+
+      // Determine expected column count from first row (physical line 1)
+      const firstRowFields = lines[0].split('~');
+      const expectedColCount = firstRowFields.length;
+
+      // Analyze all lines
+      const mismatchedLines = [];
+      let countD = 0, countA = 0;
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const lineNumber = i + 1; // 1-based indexing
+
+        // Skip empty lines for column validation (they have 1 field: [""] -> 1 column)
+        if (line.trim() === '') continue;
+
+        const fields = line.split('~');
+        const actualColCount = fields.length;
+
+        if (actualColCount !== expectedColCount) {
+          mismatchedLines.push({
+            line: lineNumber,
+            actual: actualColCount,
+            expected: expectedColCount
+          });
+        }
+
+        // Count 'D' and 'A' in Status column (case-insensitive)
+        if (statusColIndex !== -1 && fields[statusColIndex] !== undefined) {
+          const statusValue = fields[statusColIndex].trim();
+          if (statusValue.toLowerCase() === 'd') countD++;
+          else if (statusValue.toLowerCase() === 'a') countA++;
+        }
+      }
+
+      // === Update UI ===
+      document.getElementById('totalLines').textContent = lines.length;
+      document.getElementById('firstRowCols').textContent = expectedColCount;
+      document.getElementById('countD').textContent = countD;
+      document.getElementById('countA').textContent = countA;
+
+      // Show top warning if there are mismatches (USING THE WORKING LOGIC FROM ULTRA-SIMPLE VERSION)
+      const topWarnCard = document.getElementById('topWarningCard');
+      const topWarn = document.getElementById('topWarning');
+      if (mismatchedLines.length > 0) {
+        const details = mismatchedLines.map(item => 
+          `Line ${item.line}: ${item.actual} columns (vs ${item.expected} in first row)`
+        ).join('<br>');
+        topWarn.innerHTML = `<strong><i class="fas fa-exclamation-triangle"></i> Column Count Mismatch:</strong><br>${details}`;
+        // Force visibility using the working logic
+        topWarnCard.style.display = 'block';
+        topWarn.style.display = 'block';
+      } else {
+        topWarnCard.style.display = 'none';
+        topWarn.style.display = 'none';
+      }
+
+      // Render other sections
+      renderSpecialChars(lines, colMap);
+      renderNonEnglish(lines);
+    }
+
+    function renderSpecialChars(lines, colMap) {
+      const charOccurrences = {};
+      CHAR_DEFS.forEach(d => charOccurrences[d.key] = []);
+
+      lines.forEach((line, i) => {
+        if (line.trim() === '') return;
+        const ln = i + 1;
+        CHAR_DEFS.forEach(def => {
+          if (def.regex.test(line)) {
+            charOccurrences[def.key].push({ line: ln, content: line });
+          }
+        });
+      });
+
+      const filterGroup = document.getElementById('charFilterGroup');
+      filterGroup.innerHTML = '';
+      const active = new Set(CHAR_DEFS.map(d => d.key));
+      CHAR_DEFS.forEach(def => {
+        const label = document.createElement('label');
+        label.setAttribute('for', def.key); // Match label to char type
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.checked = true;
+        chk.onchange = () => {
+          if (chk.checked) active.add(def.key);
+          else active.delete(def.key);
+          renderCharTable(charOccurrences, colMap, lines, active);
+        };
+        label.append(chk, document.createTextNode(def.label));
+        filterGroup.appendChild(label);
+      });
+
+      renderCharTable(charOccurrences, colMap, lines, active);
+    }
+
+    function renderCharTable(data, colMap, lines, filters) {
+      let all = [];
+      CHAR_DEFS.forEach(def => {
+        if (filters.has(def.key)) {
+          all = all.concat(data[def.key].map(item => ({ ...item, type: def })));
+        }
+      });
+
+      const search = document.getElementById('charSearch')?.value.toLowerCase() || '';
+      if (search) all = all.filter(item => item.content.toLowerCase().includes(search));
+      if (all.length === 0) {
+        document.getElementById('charsTableContainer').innerHTML = '<p>No special characters found.</p>';
+        return;
+      }
+
+      all.sort((a, b) => a.line - b.line);
+      let html = `<table><thead><tr><th>Line #</th><th>Character Type</th><th>Column Name</th><th>Content</th></tr></thead><tbody>`;
+      all.forEach(item => {
+        // Replace TAB and NEWLINE with symbols
+        let content = item.content;
+        content = content.replace(/\t/g, '<span class="highlight-tab">→</span>'); // TAB symbol
+        content = content.replace(/\r\n/g, '<span class="highlight-newline">↵</span>\n'); // CRLF symbol
+        content = content.replace(/\n/g, '<span class="highlight-newline">↵</span>'); // LF symbol
+        content = content.replace(/\r/g, '<span class="highlight-newline">↵</span>'); // CR symbol
+
+        let h = content.replace(item.type.regex, m => 
+          `<span class="${item.type.className}">${m}</span>`
+        );
+        const fields = item.content.split('~');
+        const cols = [];
+        fields.forEach((f, i) => {
+          if (item.type.regex.test(f)) {
+            cols.push(colMap[i + 1] || `Col ${i + 1}`);
+          }
+        });
+        html += `<tr><td>${item.line}</td><td>${item.type.label}</td><td>${cols.join(', ') || 'Unknown'}</td><td>${h}</td></tr>`;
+      });
+      html += '</tbody></table>';
+      document.getElementById('charsTableContainer').innerHTML = html;
+    }
+
+    function renderNonEnglish(lines) {
+      const data = [];
+      lines.forEach((line, i) => {
+        if (line.trim() === '') return;
+        const matches = [...line.matchAll(/[^\x00-\x7F]/g)];
+        if (matches.length > 0) {
+          data.push({
+            line: i + 1,
+            content: line,
+            chars: [...new Set(matches.map(m => m[0]))]
+          });
+        }
+      });
+
+      const search = document.getElementById('nonEnglishSearch')?.value.toLowerCase() || '';
+      const filtered = search ? data.filter(item => item.content.toLowerCase().includes(search)) : data;
+      const container = document.getElementById('nonEnglishTableContainer');
+      if (filtered.length === 0) {
+        container.innerHTML = '<p>No non-English characters found.</p>';
+        return;
+      }
+
+      filtered.sort((a, b) => a.line - b.line);
+      let html = `<table><thead><tr><th>Line #</th><th>Characters</th><th>Content</th></tr></thead><tbody>`;
+      filtered.forEach(item => {
+        // Highlight non-English characters
+        let content = item.content;
+        const nonEngRegex = /[^\x00-\x7F]/g;
+        content = content.replace(nonEngRegex, match => 
+          `<span class="highlight-non-english">${match}</span>`
+        );
+
+        const div = document.createElement('div');
+        div.textContent = item.content; // For display in chars column
+        html += `<tr><td>${item.line}</td><td>${item.chars.join(', ')}</td><td>${content}</td></tr>`;
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    function compareFiles() {
+      // Parse FileSpec.ini to get column mapping
+      const specLines = specContent.trim().split(/\r\n|\r|\n/).slice(1);
+      const colMap = {};
+      let statusColIndex = -1;
+      let clientIDColIndex = -1;
+      let nameColIndex = -1;
+
+      specLines.forEach(line => {
+        if (!line.trim()) return;
+        const parts = line.split(',');
+        const colNum = parseInt(parts[0], 10);
+        if (!isNaN(colNum) && colNum > 0) {
+          const colName = parts.slice(1).join(',');
+          colMap[colNum] = colName;
+          if (colName.toLowerCase() === 'status') {
+            statusColIndex = colNum - 1; // zero-based
+          }
+          if (colName.toLowerCase() === 'clientid') {
+            clientIDColIndex = colNum - 1; // zero-based
+          }
+          if (colName.toLowerCase() === 'name') {
+            nameColIndex = colNum - 1; // zero-based
+          }
+        }
+      });
+
+      // Process both files
+      const rawLines1 = csvContent.split(/\r\n|\r|\n/);
+      const lines1 = rawLines1[rawLines1.length - 1] === '' ? rawLines1.slice(0, -1) : rawLines1;
+      const rawLines2 = compareContent.split(/\r\n|\r|\n/);
+      const lines2 = rawLines2[rawLines2.length - 1] === '' ? rawLines2.slice(0, -1) : rawLines2;
+
+      if (lines1.length === 0 || lines2.length === 0) {
+        alert('One of the files is empty!');
+        return;
+      }
+
+      // 1. Difference in number of rows
+      const rowDiff = lines2.length - lines1.length;
+      const rowDiffText = rowDiff > 0 ? `Increase: ${rowDiff} records` : rowDiff < 0 ? `Decrease: ${Math.abs(rowDiff)} records` : 'No change';
+      const rowDiffSymbol = rowDiff > 0 ? '▲' : rowDiff < 0 ? '▼' : '';
+
+      // 2. Count Status A/D in both files
+      let countD1 = 0, countA1 = 0;
+      let countD2 = 0, countA2 = 0;
+
+      for (const line of lines1) {
+        if (line.trim() === '') continue;
+        const fields = line.split('~');
+        if (statusColIndex !== -1 && fields[statusColIndex] !== undefined) {
+          const statusValue = fields[statusColIndex].trim().toLowerCase();
+          if (statusValue === 'd') countD1++;
+          else if (statusValue === 'a') countA1++;
+        }
+      }
+
+      for (const line of lines2) {
+        if (line.trim() === '') continue;
+        const fields = line.split('~');
+        if (statusColIndex !== -1 && fields[statusColIndex] !== undefined) {
+          const statusValue = fields[statusColIndex].trim().toLowerCase();
+          if (statusValue === 'd') countD2++;
+          else if (statusValue === 'a') countA2++;
+        }
+      }
+
+      const dDiff = countD2 - countD1;
+      const aDiff = countA2 - countA1;
+
+      // 3. Find non A & D statuses with line numbers, ClientID, Name
+      const nonADStatuses = [];
+      for (let i = 0; i < lines1.length; i++) {
+        const line = lines1[i];
+        if (line.trim() === '') continue;
+        const fields = line.split('~');
+        if (statusColIndex !== -1 && fields[statusColIndex] !== undefined) {
+          const statusValue = fields[statusColIndex].trim().toLowerCase();
+          if (statusValue !== 'a' && statusValue !== 'd') {
+            const clientID = clientIDColIndex !== -1 && fields[clientIDColIndex] !== undefined ? fields[clientIDColIndex].trim() : '';
+            const name = nameColIndex !== -1 && fields[nameColIndex] !== undefined ? fields[nameColIndex].trim() : '';
+            nonADStatuses.push({
+              line: i + 1,
+              clientID,
+              status: fields[statusColIndex].trim(),
+              name
+            });
+          }
+        }
+      }
+
+      for (let i = 0; i < lines2.length; i++) {
+        const line = lines2[i];
+        if (line.trim() === '') continue;
+        const fields = line.split('~');
+        if (statusColIndex !== -1 && fields[statusColIndex] !== undefined) {
+          const statusValue = fields[statusColIndex].trim().toLowerCase();
+          if (statusValue !== 'a' && statusValue !== 'd') {
+            const clientID = clientIDColIndex !== -1 && fields[clientIDColIndex] !== undefined ? fields[clientIDColIndex].trim() : '';
+            const name = nameColIndex !== -1 && fields[nameColIndex] !== undefined ? fields[nameColIndex].trim() : '';
+            nonADStatuses.push({
+              line: -(i + 1), // Negative to indicate file 2
+              clientID,
+              status: fields[statusColIndex].trim(),
+              name
+            });
+          }
+        }
+      }
+
+      // 4. Compare ClientID changes (Status, Name)
+      const clientMap1 = new Map(); // ClientID -> {status, name}
+      const clientMap2 = new Map(); // ClientID -> {status, name}
+
+      // Build maps for both files
+      for (const line of lines1) {
+        if (line.trim() === '') continue;
+        const fields = line.split('~');
+        if (clientIDColIndex !== -1 && fields[clientIDColIndex] !== undefined) {
+          const clientID = fields[clientIDColIndex].trim();
+          let status = '';
+          let name = '';
+          if (statusColIndex !== -1 && fields[statusColIndex] !== undefined) {
+            status = fields[statusColIndex].trim();
+          }
+          if (nameColIndex !== -1 && fields[nameColIndex] !== undefined) {
+            name = fields[nameColIndex].trim();
+          }
+          clientMap1.set(clientID, { status, name });
+        }
+      }
+
+      for (const line of lines2) {
+        if (line.trim() === '') continue;
+        const fields = line.split('~');
+        if (clientIDColIndex !== -1 && fields[clientIDColIndex] !== undefined) {
+          const clientID = fields[clientIDColIndex].trim();
+          let status = '';
+          let name = '';
+          if (statusColIndex !== -1 && fields[statusColIndex] !== undefined) {
+            status = fields[statusColIndex].trim();
+          }
+          if (nameColIndex !== -1 && fields[nameColIndex] !== undefined) {
+            name = fields[nameColIndex].trim();
+          }
+          clientMap2.set(clientID, { status, name });
+        }
+      }
+
+      // Find changes in existing ClientIDs
+      const statusNameChanges = [];
+      for (const [clientID, data1] of clientMap1) {
+        const data2 = clientMap2.get(clientID);
+        if (data2) {
+          if (data1.status !== data2.status || data1.name !== data2.name) {
+            statusNameChanges.push({
+              clientID,
+              status1: data1.status,
+              status2: data2.status,
+              name1: data1.name,
+              name2: data2.name
+            });
+          }
+        }
+      }
+
+      // 5. Check for version changes (ClientID with '-' pattern)
+      const versionChanges = [];
+      for (const [clientID, data1] of clientMap1) {
+        if (clientID.includes('-')) {
+          const baseID = clientID.split('-')[0];
+          // Look for ClientID with same base but different suffix in file 2
+          for (const [cID2, data2] of clientMap2) {
+            if (cID2.includes('-')) {
+              const bID2 = cID2.split('-')[0];
+              if (baseID === bID2 && clientID !== cID2) {
+                versionChanges.push({
+                  clientID1: clientID,
+                  clientID2: cID2,
+                  status1: data1.status,
+                  status2: data2.status,
+                  name1: data1.name,
+                  name2: data2.name
+                });
+              }
+            }
+          }
+        }
+      }
+
+      // Function to highlight differences in names
+      function highlightNameDifferences(name1, name2) {
+        if (name1 === name2) return { name1, name2 };
+        let diff1 = name1;
+        let diff2 = name2;
+
+        // Find common prefix
+        let prefixLen = 0;
+        const minLen = Math.min(name1.length, name2.length);
+        while (prefixLen < minLen && name1[prefixLen] === name2[prefixLen]) {
+          prefixLen++;
+        }
+
+        // Find common suffix
+        let suffixLen = 0;
+        while (suffixLen < minLen - prefixLen && 
+               name1[name1.length - 1 - suffixLen] === name2[name2.length - 1 - suffixLen]) {
+          suffixLen++;
+        }
+
+        // Highlight differences
+        if (prefixLen + suffixLen < name1.length) {
+          const mid1 = name1.substring(prefixLen, name1.length - suffixLen);
+          diff1 = name1.substring(0, prefixLen) + 
+                  `<span class="name-diff">${mid1}</span>` + 
+                  name1.substring(name1.length - suffixLen);
+        }
+
+        if (prefixLen + suffixLen < name2.length) {
+          const mid2 = name2.substring(prefixLen, name2.length - suffixLen);
+          diff2 = name2.substring(0, prefixLen) + 
+                  `<span class="name-diff">${mid2}</span>` + 
+                  name2.substring(name2.length - suffixLen);
+        }
+
+        return { name1: diff1, name2: diff2 };
+      }
+
+      // Render comparison results
+      let html = `
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Row Count Change</div>
+            <div class="info-value row-change">${rowDiffSymbol} ${rowDiffText}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Status 'D' Change</div>
+            <div class="info-value status-d-change ${dDiff > 0 ? 'positive' : dDiff < 0 ? '' : 'zero'}">${dDiff > 0 ? '+' : ''}${dDiff}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Status 'A' Change</div>
+            <div class="info-value status-a-change ${aDiff > 0 ? 'positive' : aDiff < 0 ? '' : 'zero'}">${aDiff > 0 ? '+' : ''}${aDiff}</div>
+          </div>
+        </div>
+      `;
+
+      if (nonADStatuses.length > 0) {
+        html += `
+          <div style="margin-top: 15px;">
+            <h3 style="color: var(--text-primary); margin-bottom: 8px;">Non 'A'/'D' Status Values</h3>
+            <table id="nonADTable">
+              <thead>
+                <tr>
+                  <th>File</th>
+                  <th>Line #</th>
+                  <th>ClientID</th>
+                  <th>Status</th>
+                  <th>Name</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+        for (const item of nonADStatuses) {
+          const fileLabel = item.line > 0 ? 'File 1' : 'File 2';
+          const lineNum = Math.abs(item.line);
+          html += `
+            <tr>
+              <td>${fileLabel}</td>
+              <td>${lineNum}</td>
+              <td>${item.clientID}</td>
+              <td>${item.status}</td>
+              <td>${item.name}</td>
+            </tr>
+          `;
+        }
+        html += '</tbody></table>';
+        html += '<button class="btn export" onclick="exportTableToCSV(\'nonADTable\', \'non_ad_status_values.csv\')" style="margin-top: 10px;"><i class="fas fa-download"></i> Export to CSV</button>';
+        html += '</div>';
+      }
+
+      if (statusNameChanges.length > 0) {
+        html += `
+          <div style="margin-top: 15px;">
+            <h3 style="color: var(--text-primary); margin-bottom: 8px;">Status/Name Changes</h3>
+            <table id="statusNameChangesTable">
+              <thead>
+                <tr>
+                  <th>ClientID</th>
+                  <th>Status (File 1)</th>
+                  <th>Status (File 2)</th>
+                  <th>Name (File 1)</th>
+                  <th>Name (File 2)</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+        for (const change of statusNameChanges) {
+          const { name1, name2 } = highlightNameDifferences(change.name1, change.name2);
+          html += `
+            <tr>
+              <td>${change.clientID}</td>
+              <td>${change.status1}</td>
+              <td>${change.status2}</td>
+              <td>${name1}</td>
+              <td>${name2}</td>
+            </tr>
+          `;
+        }
+        html += '</tbody></table>';
+        html += '<button class="btn export" onclick="exportTableToCSV(\'statusNameChangesTable\', \'status_name_changes.csv\')" style="margin-top: 10px;"><i class="fas fa-download"></i> Export to CSV</button>';
+        html += '</div>';
+      }
+
+      if (versionChanges.length > 0) {
+        html += `
+          <div style="margin-top: 15px;">
+            <h3 style="color: var(--text-primary); margin-bottom: 8px;">Version Changes</h3>
+            <table id="versionChangesTable">
+              <thead>
+                <tr>
+                  <th>ClientID (File 1)</th>
+                  <th>ClientID (File 2)</th>
+                  <th>Status (File 1)</th>
+                  <th>Status (File 2)</th>
+                  <th>Name (File 1)</th>
+                  <th>Name (File 2)</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+        for (const change of versionChanges) {
+          const { name1, name2 } = highlightNameDifferences(change.name1, change.name2);
+          html += `
+            <tr>
+              <td>${change.clientID1}</td>
+              <td>${change.clientID2}</td>
+              <td>${change.status1}</td>
+              <td>${change.status2}</td>
+              <td>${name1}</td>
+              <td>${name2}</td>
+            </tr>
+          `;
+        }
+        html += '</tbody></table>';
+        html += '<button class="btn export" onclick="exportTableToCSV(\'versionChangesTable\', \'version_changes.csv\')" style="margin-top: 10px;"><i class="fas fa-download"></i> Export to CSV</button>';
+        html += '</div>';
+      }
+
+      if (statusNameChanges.length === 0 && versionChanges.length === 0 && nonADStatuses.length === 0) {
+        html += '<p>No changes detected.</p>';
+      }
+
+      document.getElementById('compareResultsContainer').innerHTML = html;
+      document.getElementById('compareResultsCard').style.display = 'block';
+    }
+
+    // FIXED CSV Export Function
+    function exportTableToCSV(elementId, filename) {
+      let table = null;
+      
+      // First, try to find the element by ID
+      const element = document.getElementById(elementId);
+      if (!element) {
+        alert('Element not found!');
+        return;
+      }
+      
+      // Check if the element itself is a table
+      if (element.tagName === 'TABLE') {
+        table = element;
+      } else {
+        // Otherwise, look for a table inside the element
+        table = element.querySelector('table');
+      }
+      
+      if (!table) {
+        alert('No table found to export!');
+        return;
+      }
+
+      // Extract headers
+      const headers = [];
+      const headerRow = table.querySelector('thead tr');
+      if (headerRow) {
+        headerRow.querySelectorAll('th').forEach(th => {
+          let text = th.textContent || th.innerText || '';
+          text = text.replace(/"/g, '""'); // Escape quotes
+          headers.push(`"${text}"`);
+        });
+      }
+
+      // Extract rows
+      const rows = [];
+      table.querySelectorAll('tbody tr').forEach(tr => {
+        const rowData = [];
+        tr.querySelectorAll('td').forEach(td => {
+          let text = td.textContent || td.innerText || '';
+          text = text.replace(/"/g, '""'); // Escape quotes
+          rowData.push(`"${text}"`);
+        });
+        rows.push(rowData.join(','));
+      });
+
+      // Combine everything
+      const csvContent = [headers.join(','), ...rows].join('\n');
+      
+      // Create download link
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Real-time search functions remain unchanged
+    document.getElementById('charSearch')?.addEventListener('input', () => {
+      const specLines = specContent.trim().split(/\r\n|\r|\n/).slice(1);
+      const colMap = {};
+      specLines.forEach(line => {
+        if (!line.trim()) return;
+        const [num, ...name] = line.split(',');
+        const n = parseInt(num, 10);
+        if (!isNaN(n)) colMap[n] = name.join(',');
+      });
+      const lines = csvContent.split(/\r\n|\r|\n/);
+      const clean = lines[lines.length - 1] === '' ? lines.slice(0, -1) : lines;
+      const occ = {};
+      CHAR_DEFS.forEach(d => {
+        occ[d.key] = [];
+        clean.forEach((l, i) => {
+          if (l.trim() && d.regex.test(l)) occ[d.key].push({ line: i + 1, content: l });
+        });
+      });
+      const f = new Set(CHAR_DEFS.map(d => d.key));
+      renderCharTable(occ, colMap, clean, f);
+    });
+
+    document.getElementById('nonEnglishSearch')?.addEventListener('input', () => {
+      const lines = csvContent.split(/\r\n|\r|\n/);
+      const clean = lines[lines.length - 1] === '' ? lines.slice(0, -1) : lines;
+      const data = [];
+      clean.forEach((l, i) => {
+        if (l.trim()) {
+          const m = [...l.matchAll(/[^\x00-\x7F]/g)];
+          if (m.length) data.push({ line: i + 1, content: l, chars: [...new Set(m.map(x => x[0]))] });
+        }
+      });
+      const container = document.getElementById('nonEnglishTableContainer');
+      const search = document.getElementById('nonEnglishSearch').value.toLowerCase();
+      const filtered = search ? data.filter(item => item.content.toLowerCase().includes(search)) : data;
+      if (filtered.length === 0) {
+        container.innerHTML = '<p>No non-English characters found.</p>';
+        return;
+      }
+      filtered.sort((a, b) => a.line - b.line);
+      let html = `<table><thead><tr><th>Line #</th><th>Characters</th><th>Content</th></tr></thead><tbody>`;
+      filtered.forEach(item => {
+        // Highlight non-English characters
+        let content = item.content;
+        const nonEngRegex = /[^\x00-\x7F]/g;
+        content = content.replace(nonEngRegex, match => 
+          `<span class="highlight-non-english">${match}</span>`
+        );
+
+        html += `<tr><td>${item.line}</td><td>${item.chars.join(', ')}</td><td>${content}</td></tr>`;
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    });
+  </script>
+</body>
+</html>
